@@ -1,47 +1,21 @@
 import express from "express";
+import db from "./config/dbConnect.js";
+import routes from "./routes/index.js";
+import handlerError from "./middleware/handlerError.js";
+import handlerNotFound from "./middleware/handlerNotFound.js";
+
+db.on("error", console.log.bind(console, "There was a connection error!"));
+db.once("open", () => {
+    console.log("Connection with the database successfully completed!");
+});
 
 const app = express();
+app.use(express.json());
+routes(app);
 
-app.use(express.json())
+app.use(handlerNotFound);
 
-const books = [
-    {id: 1, "titulo": "Senhor dos Aneis"},
-    {id: 2, "titulo": "O Hobbit"}
-]
+// eslint-disable-next-line no-unused-vars
+app.use(handlerError);
 
-app.get('/', (req, res) => {
-    res.status(200).send('Curso de Node');
-})
-
-app.get('/books', (req, res) => {
-    res.status(200).json(books)
-})
-
-app.get('/books/:id', (req, res) => {
-    let index = buscaLivro(req.params.id);
-    res.json(books[index])
-})
-
-app.post('/books', (req, res) => {
-    books.push(req.body);
-    res.status(201).send('Livro foi cadastrado com sucesso.')
-})
-
-app.put('/books/:id', (req, res) => {
-    let index = buscaLivro(req.params.id);
-    books[index].titulo = req.body.titulo;
-    res.json(books)
-})
-
-app.delete('/books/:id', (req, res) => {
-    let {id} = req.params;
-    let index = buscaLivro(id);
-    books.splice(index, 1)
-    res.send(`Livro para o Id: ${id} removido com sucesso`);
-})
-
-function buscaLivro(id){
-    return books.findIndex(book => book.id == id)
-}
-
-export default app
+export default app;
