@@ -12,7 +12,15 @@ const bookSchema = new mongoose.Schema(
             type: String, 
             required: [true, "publisher field is required"]
         },
-        numberOfPages : {type: Number}
+        numberOfPages : {
+            type: Number,
+            validate: {
+                validator: (value) => {
+                    return value >= 10 && value <= 5000;
+                },
+                message: "Number of pages must be between 10 and 5000."
+            }
+        }
     });
 
 const books = mongoose.model("books", bookSchema);
