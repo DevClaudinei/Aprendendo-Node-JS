@@ -1,12 +1,15 @@
-import authors from "../models/Author.js";
 import NotFound from "../errors/NotFound.js";
+import { authors } from "../models/index.js";
 
 class authorsController {
 
     static getAuthors = async (req, res, next) => {
         try {
-            const authorsFound = await authors.find();
-            res.status(200).json(authorsFound);
+            const authorsFound = authors.find();
+
+            req.result = authorsFound;
+            
+            next();
         } catch (err) {
             next(err);
         }

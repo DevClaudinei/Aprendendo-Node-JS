@@ -1,14 +1,15 @@
 import NotFound from "../errors/NotFound.js";
-import books from "../models/Book.js";
+import { authors, books } from "../models/index.js";
 
 class booksController {
 
     static getBooks = async (req, res, next) => {
         try {
-            const booksFound = await books.find()
-                .populate("author")
-                .exec();
-            res.status(200).json(booksFound);
+            const searchBooks = books.find().populate("author");
+
+            req.result = searchBooks;
+
+            next();
         } catch (err) {
             next(err);
         }
@@ -32,17 +33,19 @@ class booksController {
         }
     };
 
-    static getBookByPublisher = async (req, res, next) => {
-        const publisher = req.query.publisher;
-
+    static getBookByFilter = async (req, res, next) => {
         try {
-            const bookFound = await books.find({"publisher": publisher});
+            const search = await createSearch(req.query);
 
-            if (bookFound !== null) {
-                res.status(200).send(bookFound);
+            if (search !== null) {
+                const bookFound = books.find(search)
+                    .populate("author");
+
+                req.result = bookFound;
+                next(); 
             } else {
-                next(NotFound(`Book for Id: ${publisher} not found`));
-            }
+                res.status(200).send([]);
+            } 
         } catch (err) {
             next(err);
         }
@@ -90,6 +93,34 @@ class booksController {
             next(err);
         }
     };
+}
+
+async function createSearch(parameters) {
+    const { title, publisher, minPage, maxPage, authorName } = parameters;
+    
+    let search = {};
+    
+    if (publisher) search.publisher = publisher;
+
+    if (title) search.title = { $regex: title, $options: "i" };
+
+    if (minPage | maxPage) search.numberOfPage = {};
+
+    if (minPage) search.numberOfPage.$gte = minPage;
+
+    if (maxPage) search.numberOfPage.$lte = maxPage;
+
+    if (authorName) {
+        const author = await authors.findOne({name: authorName});
+
+        if (author !== null) {
+            search.author = author._id;
+        } else {
+            search = null;
+        }
+    }
+
+    return search;
 }
 
 export default booksController;
